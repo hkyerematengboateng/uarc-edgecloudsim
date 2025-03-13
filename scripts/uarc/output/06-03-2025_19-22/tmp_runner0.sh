@@ -1,3 +1,0 @@
-/Users/hubertkyeremateng-boateng/Documents/UARC/EdgeCloudSim/scripts/uarc/runner.sh /Users/hubertkyeremateng-boateng/Documents/UARC/EdgeCloudSim/scripts/uarc/output/06-03-2025_19-22 default_config edge_devices.xml applications.xml 1
-/Users/hubertkyeremateng-boateng/Documents/UARC/EdgeCloudSim/scripts/uarc/runner.sh /Users/hubertkyeremateng-boateng/Documents/UARC/EdgeCloudSim/scripts/uarc/output/06-03-2025_19-22 default_config edge_devices.xml applications.xml 5
-/Users/hubertkyeremateng-boateng/Documents/UARC/EdgeCloudSim/scripts/uarc/runner.sh /Users/hubertkyeremateng-boateng/Documents/UARC/EdgeCloudSim/scripts/uarc/output/06-03-2025_19-22 default_config edge_devices.xml applications.xml 9

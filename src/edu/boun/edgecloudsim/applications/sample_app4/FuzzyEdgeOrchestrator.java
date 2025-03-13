@@ -113,7 +113,6 @@ public class FuzzyEdgeOrchestrator extends EdgeOrchestrator {
 					bestRemoteEdgeUtilization = avgUtilization;
 				}
 			}
-
 			if(policy.equals("FUZZY_BASED")){
 				int bestHostIndex = nearestEdgeHostIndex;
 				double bestHostUtilization = nearestEdgeUtilization;

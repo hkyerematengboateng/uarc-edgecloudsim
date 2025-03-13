@@ -1,9 +1,12 @@
 package edu.boun.edgecloudsim.applications.uarc;
 
+import edu.boun.edgecloudsim.core.ScenarioFactory;
+import edu.boun.edgecloudsim.core.SimManager;
 import edu.boun.edgecloudsim.core.SimSettings;
 import edu.boun.edgecloudsim.utils.SimLogger;
 import edu.boun.edgecloudsim.utils.SimUtils;
 import org.cloudbus.cloudsim.Log;
+import org.cloudbus.cloudsim.core.CloudSim;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -33,9 +36,9 @@ public class Application {
         }
         else{
             SimLogger.printLine("Simulation setting file, output folder and iteration number are not provided! Using default ones...");
-            configFile = "scripts/sample_app4/config/default_config.properties";
-            applicationsFile = "scripts/sample_app4/config/applications.xml";
-            edgeDevicesFile = "scripts/sample_app4/config/edge_devices.xml";
+            configFile = "scripts/uarc/config/default_config.properties";
+            applicationsFile = "scripts/uarc/config/applications.xml";
+            edgeDevicesFile = "scripts/uarc/config/edge_devices.xml";
             outputFolder = "sim_results/ite" + iterationNumber;
         }
         SimSettings SS = SimSettings.getInstance();
@@ -55,6 +58,59 @@ public class Application {
         String now = df.format(SimulationStartDate);
         SimLogger.printLine("Simulation started at " + now);
         SimLogger.printLine("----------------------------------------------------------------------");
+        for(int j=SS.getMinNumOfMobileDev(); j<=SS.getMaxNumOfMobileDev(); j+=SS.getMobileDevCounterSize())
+        {
+            for(int k=0; k<SS.getSimulationScenarios().length; k++)
+            {
+                for(int i=0; i<SS.getOrchestratorPolicies().length; i++)
+                {
+                    String simScenario = SS.getSimulationScenarios()[k];
+                    String orchestratorPolicy = SS.getOrchestratorPolicies()[i];
+                    Date ScenarioStartDate = Calendar.getInstance().getTime();
+                    now = df.format(ScenarioStartDate);
 
+                    SimLogger.printLine("Scenario started at " + now);
+                    SimLogger.printLine("Scenario: " + simScenario + " - Policy: " + orchestratorPolicy + " - #iteration: " + iterationNumber);
+                    SimLogger.printLine("Duration: " + SS.getSimulationTime()/60 + " min (warm up period: "+ SS.getWarmUpPeriod()/60 +" min) - #devices: " + j);
+                    SimLogger.getInstance().simStarted(outputFolder,"SIMRESULT_" + simScenario + "_"  + orchestratorPolicy + "_" + j + "DEVICES");
+
+                    try
+                    {
+                        // First step: Initialize the CloudSim package. It should be called
+                        // before creating any entities.
+                        int num_user = 2;   // number of grid users
+                        Calendar calendar = Calendar.getInstance();
+                        boolean trace_flag = false;  // mean trace events
+
+                        // Initialize the CloudSim library
+                        CloudSim.init(num_user, calendar, trace_flag, 0.01);
+
+                        // Generate EdgeCloudsim Scenario Factory
+                        ScenarioFactory sampleFactory = new UarcScenarioFactory(j,SS.getSimulationTime(), orchestratorPolicy, simScenario);
+
+                        // Generate EdgeCloudSim Simulation Manager
+                        SimManager manager = new SimManager(sampleFactory, j, simScenario, orchestratorPolicy);
+
+                        // Start simulation
+                        manager.startSimulation();
+                    }
+                    catch (Exception e)
+                    {
+                        SimLogger.printLine("The simulation has been terminated due to an unexpected error");
+                        e.printStackTrace();
+                        System.exit(0);
+                    }
+
+                    Date ScenarioEndDate = Calendar.getInstance().getTime();
+                    now = df.format(ScenarioEndDate);
+                    SimLogger.printLine("Scenario finished at " + now +  ". It took " + SimUtils.getTimeDifference(ScenarioStartDate,ScenarioEndDate));
+                    SimLogger.printLine("----------------------------------------------------------------------");
+                }//End of orchestrators loop
+            }//End of scenarios loop
+        }//End of mobile devices loop
+
+        Date SimulationEndDate = Calendar.getInstance().getTime();
+        now = df.format(SimulationEndDate);
+        SimLogger.printLine("Simulation finished at " + now +  ". It took " + SimUtils.getTimeDifference(SimulationStartDate,SimulationEndDate));
     }
 }

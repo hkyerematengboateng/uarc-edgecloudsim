@@ -6,6 +6,7 @@ import edu.boun.edgecloudsim.core.SimManager;
 import edu.boun.edgecloudsim.core.SimSettings;
 import edu.boun.edgecloudsim.edge_client.CpuUtilizationModel_Custom;
 import edu.boun.edgecloudsim.edge_client.Task;
+import edu.boun.edgecloudsim.edge_client.mobile_processing_unit.MobileVM;
 import edu.boun.edgecloudsim.edge_orchestrator.EdgeOrchestrator;
 import edu.boun.edgecloudsim.edge_server.EdgeHost;
 import edu.boun.edgecloudsim.edge_server.EdgeVM;
@@ -22,7 +23,9 @@ import java.util.List;
 
 public class AdaptiveEdgeOrchestrator extends EdgeOrchestrator {
     public static final double MAX_DATA_SIZE=2500;
-
+    private double activeManTaskCount = 0;
+    private double activeWanTaskCount = 0;
+    private double totalSizeOfActiveManTasks = 0;
     private int numberOfHost; //used by load balancer
     private FIS fis1 = null;
     private FIS fis2 = null;
@@ -32,6 +35,7 @@ public class AdaptiveEdgeOrchestrator extends EdgeOrchestrator {
     }
     @Override
     public void initialize() {
+        //Loading Fuzzy Logic definitions
         try {
             fis1 = FIS.createFromString(FCL_definition.fclDefinition1, false);
             fis2 = FIS.createFromString(FCL_definition.fclDefinition2, false);
@@ -98,6 +102,9 @@ public class AdaptiveEdgeOrchestrator extends EdgeOrchestrator {
             }
 
             switch (policy) {
+                case "UARC" -> {
+                    result = SimSettings.GENERIC_EDGE_DEVICE_ID;
+                }
                 case "FUZZY_BASED" -> {
                     int bestHostIndex = nearestEdgeHostIndex;
                     double bestHostUtilization = nearestEdgeUtilization;
@@ -127,7 +134,7 @@ public class AdaptiveEdgeOrchestrator extends EdgeOrchestrator {
                     if (fis1.getVariable("offload_decision").getValue() > 50) {
                         result = SimSettings.CLOUD_DATACENTER_ID;
                     } else {
-                        result = bestHostIndex;
+                        result = SimSettings.GENERIC_EDGE_DEVICE_ID;
                     }
                 }
                 case "FUZZY_COMPETITOR" -> {
@@ -232,6 +239,29 @@ public class AdaptiveEdgeOrchestrator extends EdgeOrchestrator {
             }
         }
         return selectedVM;
+    }
+
+    public double getManDelayForAgent(){
+        double delay = 0;
+        double mu = 0;
+        double lambda = 0;
+        double bandwidth = 1300*1024; //Kbps , C
+
+        if (totalSizeOfActiveManTasks == 0){
+            mu = bandwidth;
+        }else{
+            mu = bandwidth / (totalSizeOfActiveManTasks * 8);
+        }
+
+        lambda = activeManTaskCount;
+
+
+        if (lambda >= mu){
+            return 0;
+        }else{
+            delay = 1 / (mu - lambda);
+            return delay;
+        }
     }
 
     @Override

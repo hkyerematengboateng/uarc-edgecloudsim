@@ -42,7 +42,7 @@ public class VehicularMobileDeviceManager extends MobileDeviceManager {
 	private static final int SET_DELAY_LOG = BASE + 2;
 	private static final int READY_TO_SELECT_VM = BASE + 3;
 	private static final int REQUEST_RECEIVED_BY_CLOUD = BASE + 4;
-	private static final int REQUEST_RECEIVED_BY_MOBILE_DEVICE = BASE + 5;
+	public static final int REQUEST_RECEIVED_BY_MOBILE_DEVICE = BASE + 5;
 	private static final int REQUEST_RECEIVED_BY_EDGE_DEVICE = BASE + 6;
 	private static final int REQUEST_RECEIVED_BY_EDGE_DEVICE_TO_RELAY_CLOUD = BASE + 7;
 	private static final int REQUEST_RECEIVED_BY_EDGE_DEVICE_TO_RELAY_NEIGHBOR = BASE + 8;

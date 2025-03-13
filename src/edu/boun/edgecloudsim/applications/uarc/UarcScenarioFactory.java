@@ -3,9 +3,11 @@ package edu.boun.edgecloudsim.applications.uarc;
 import edu.boun.edgecloudsim.cloud_server.CloudServerManager;
 import edu.boun.edgecloudsim.cloud_server.DefaultCloudServerManager;
 import edu.boun.edgecloudsim.core.ScenarioFactory;
+import edu.boun.edgecloudsim.edge_client.DefaultMobileDeviceManager;
 import edu.boun.edgecloudsim.edge_client.MobileDeviceManager;
 import edu.boun.edgecloudsim.edge_client.mobile_processing_unit.DefaultMobileServerManager;
 import edu.boun.edgecloudsim.edge_client.mobile_processing_unit.MobileServerManager;
+import edu.boun.edgecloudsim.edge_orchestrator.BasicEdgeOrchestrator;
 import edu.boun.edgecloudsim.edge_orchestrator.EdgeOrchestrator;
 import edu.boun.edgecloudsim.edge_server.DefaultEdgeServerManager;
 import edu.boun.edgecloudsim.edge_server.EdgeServerManager;
@@ -44,7 +46,7 @@ public class UarcScenarioFactory  implements ScenarioFactory {
      */
     @Override
     public EdgeOrchestrator getEdgeOrchestrator() {
-        return new AdaptiveEdgeOrchestrator(orchestratorPolicy, simScenario);
+        return new FuzzyQLEdgeOrchestrator(orchestratorPolicy, simScenario);
     }
 
     /**

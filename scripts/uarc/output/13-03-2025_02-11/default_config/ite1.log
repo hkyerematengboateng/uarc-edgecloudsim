@@ -1,0 +1,118 @@
+Simulation started at 13/03/2025 02:11:42
+----------------------------------------------------------------------
+Scenario started at 13/03/2025 02:11:42
+Scenario: TWO_TIER_WITH_EO - Policy: FUZZY_Q_LEARNING - #iteration: 1
+Duration: 33.0 min (warm up period: 3.0 min) - #devices: 200
+Creating tasks...Done, 
+Creating device locations...Done.
+FuzzyQLEdgeOrchestrator initialized with fuzzy Q-learning based orchestration
+SimManager is starting...Done.
+.........10.........20.........3030.........40.........50.........60.........70.........80.........90.........100
+AUGMENTED_REALITY
+# of tasks (Edge/Cloud): 34567(34538/29)
+# of failed tasks (Edge/Cloud): 756(756/0)
+# of completed tasks (Edge/Cloud): 33811(33782/29)
+---------------------------------------
+HEALTH_APP
+# of tasks (Edge/Cloud): 8295(8294/1)
+# of failed tasks (Edge/Cloud): 99(99/0)
+# of completed tasks (Edge/Cloud): 8196(8195/1)
+---------------------------------------
+HEAVY_COMP_APP
+# of tasks (Edge/Cloud): 1156(1156/0)
+# of failed tasks (Edge/Cloud): 55(55/0)
+# of completed tasks (Edge/Cloud): 1101(1101/0)
+---------------------------------------
+INFOTAINMENT_APP
+# of tasks (Edge/Cloud): 6367(6348/19)
+# of failed tasks (Edge/Cloud): 259(259/0)
+# of completed tasks (Edge/Cloud): 6108(6089/19)
+---------------------------------------
+# of tasks (Edge/Cloud/Mobile): 50385(50336/49/0)
+# of failed tasks (Edge/Cloud/Mobile): 1169(1169/0/0)
+# of completed tasks (Edge/Cloud/Mobile): 49216(49167/49/0)
+# of uncompleted tasks (Edge/Cloud/Mobile): 185(184/0/1)
+# of failed tasks due to vm capacity (Edge/Cloud/Mobile): 0(0/0/0)
+# of failed tasks due to Mobility/WLAN Range/Network(WLAN/MAN/WAN/GSM): 1169/0/0(0/0/0/0)
+percentage of failed tasks: 2.320135%
+average service time: 5.421515 seconds. (on Edge: 5.425795, on Cloud: 1.126938, on Mobile: NaN)
+average processing time: 5.369582 seconds. (on Edge: 5.374797, on Cloud: 0.137132, on Mobile: NaN)
+average network delay: 0.051933 seconds. (LAN delay: 0.050998, MAN delay: NaN, WAN delay: 0.989806, GSM delay: NaN)
+average server utilization Edge/Cloud/Mobile: 10.689752/0.000760/0.000000
+average cost: 0.0$
+average overhead: 0.0 ns
+average QoE (for all): 0.0%
+average QoE (for executed): 0.0%
+FuzzyQLEdgeOrchestrator final statistics:
+  Total tasks processed: 0
+  Edge failure rate: 0.0
+Top performing fuzzy rules:
+  task_size-medium_wan_bandwidth-high_delay_sensitivity-high -> cloud: 0.0
+  task_size-medium_edge_utilization-low_edge_capacity-high -> cloud: 0.0
+  task_size-large_edge_utilization-medium_edge_capacity-high -> cloud: 0.0
+  task_size-large_wan_bandwidth-medium_delay_sensitivity-low -> cloud: 0.0
+  task_size-large_wan_bandwidth-high_delay_sensitivity-high -> cloud: 0.0
+Scenario finished at 13/03/2025 02:12:41. It took 59 Seconds
+----------------------------------------------------------------------
+Scenario started at 13/03/2025 02:12:41
+Scenario: TWO_TIER_WITH_EO - Policy: FUZZY_Q_LEARNING - #iteration: 1
+Duration: 33.0 min (warm up period: 3.0 min) - #devices: 400
+Creating tasks...Done, 
+Creating device locations...Done.
+FuzzyQLEdgeOrchestrator initialized with fuzzy Q-learning based orchestration
+SimManager is starting...Done.
+.........10.........20.........3030.........40.........50.........60.........70.........80.........90.........100
+AUGMENTED_REALITY
+# of tasks (Edge/Cloud): 77692(76441/1251)
+# of failed tasks (Edge/Cloud): 2083(2013/70)
+# of completed tasks (Edge/Cloud): 75609(74428/1181)
+---------------------------------------
+HEALTH_APP
+# of tasks (Edge/Cloud): 12923(12913/10)
+# of failed tasks (Edge/Cloud): 161(161/0)
+# of completed tasks (Edge/Cloud): 12762(12752/10)
+---------------------------------------
+HEAVY_COMP_APP
+# of tasks (Edge/Cloud): 2169(2085/84)
+# of failed tasks (Edge/Cloud): 140(139/1)
+# of completed tasks (Edge/Cloud): 2029(1946/83)
+---------------------------------------
+INFOTAINMENT_APP
+# of tasks (Edge/Cloud): 13646(13278/368)
+# of failed tasks (Edge/Cloud): 519(504/15)
+# of completed tasks (Edge/Cloud): 13127(12774/353)
+---------------------------------------
+# of tasks (Edge/Cloud/Mobile): 106430(104717/1713/0)
+# of failed tasks (Edge/Cloud/Mobile): 2903(2817/86/0)
+# of completed tasks (Edge/Cloud/Mobile): 103527(101900/1627/0)
+# of uncompleted tasks (Edge/Cloud/Mobile): 474(470/0/4)
+# of failed tasks due to vm capacity (Edge/Cloud/Mobile): 0(0/0/0)
+# of failed tasks due to Mobility/WLAN Range/Network(WLAN/MAN/WAN/GSM): 2828/0/75(0/0/75/0)
+percentage of failed tasks: 2.727614%
+average service time: 5.578671 seconds. (on Edge: 5.624529, on Cloud: 2.706542, on Mobile: NaN)
+average processing time: 5.480772 seconds. (on Edge: 5.564693, on Cloud: 0.224755, on Mobile: NaN)
+average network delay: 0.097899 seconds. (LAN delay: 0.059836, MAN delay: NaN, WAN delay: 2.481787, GSM delay: NaN)
+average server utilization Edge/Cloud/Mobile: 23.049392/0.044377/0.000000
+average cost: 0.0$
+average overhead: 0.0 ns
+average QoE (for all): 0.0%
+average QoE (for executed): 0.0%
+FuzzyQLEdgeOrchestrator final statistics:
+  Total tasks processed: 0
+  Edge failure rate: 0.0
+Top performing fuzzy rules:
+  task_size-medium_wan_bandwidth-high_delay_sensitivity-high -> cloud: 0.0
+  task_size-medium_edge_utilization-low_edge_capacity-high -> cloud: 0.0
+  task_size-large_edge_utilization-medium_edge_capacity-high -> cloud: 0.0
+  task_size-large_wan_bandwidth-medium_delay_sensitivity-low -> cloud: 0.0
+  task_size-large_wan_bandwidth-high_delay_sensitivity-high -> cloud: 0.0
+Scenario finished at 13/03/2025 02:19:03. It took 6 Minutes 21 Seconds
+----------------------------------------------------------------------
+Scenario started at 13/03/2025 02:19:03
+Scenario: TWO_TIER_WITH_EO - Policy: FUZZY_Q_LEARNING - #iteration: 1
+Duration: 33.0 min (warm up period: 3.0 min) - #devices: 600
+Creating tasks...Done, 
+Creating device locations...Done.
+FuzzyQLEdgeOrchestrator initialized with fuzzy Q-learning based orchestration
+SimManager is starting...Done.
+.........10.........20.........3030.........40.........50.........60.........70.........80.........90..
