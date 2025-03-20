@@ -302,19 +302,41 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
             int nearestEdgeHostIndex = hostIndices[0];
             double nearestEdgeUtilization = hostIndices[1];
             int bestRemoteEdgeHostIndex = hostIndices[2];
+            Task dummyTask = new Task(0, 0, 0, 0, 128, 128, new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
 
+            double wanDelay = SimManager.getInstance().getNetworkModel().getUploadDelay(task.getMobileDeviceId(),
+                    SimSettings.CLOUD_DATACENTER_ID, dummyTask /* 1 Mbit */);
             // Get network metrics
             NetworkMetrics networkMetrics = getNetworkMetrics(task);
-
+            double wanBW = (wanDelay == 0) ? 0 : (1 / wanDelay); /* Mbps */
             // Get system metrics
             double edgeUtilization = SimManager.getInstance().getEdgeServerManager().getAvgUtilization();
             double edgeCapacity = estimateEdgeCapacity(nearestEdgeHostIndex, task);
 
             // Store task metadata for learning
             storeTaskMetadata(task, networkMetrics, edgeUtilization, edgeCapacity, nearestEdgeHostIndex);
-
+            double utilization = edgeUtilization;
             // Make decision based on policy
             switch (policy) {
+                case "NETWORK_BASED" -> {
+                    if(wanBW > 6)
+                        result = SimSettings.CLOUD_DATACENTER_ID;
+                    else
+                        result = SimSettings.GENERIC_EDGE_DEVICE_ID;
+                }
+                case "UTILIZATION_BASED" -> {
+
+                    if(utilization > 80)
+                        result = SimSettings.CLOUD_DATACENTER_ID;
+                    else
+                        result = SimSettings.GENERIC_EDGE_DEVICE_ID;
+                }
+                case "HYBRID" ->{
+                    if(wanBW > 6 && utilization > 80)
+                        result = SimSettings.CLOUD_DATACENTER_ID;
+                    else
+                        result = SimSettings.GENERIC_EDGE_DEVICE_ID;
+                }
                 case "FUZZY_Q_LEARNING" -> {
                     // Use fuzzy Q-learning to decide
                     result = fuzzyQLearningDecision(task, networkMetrics, nearestEdgeHostIndex,
@@ -325,7 +347,6 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
                     // Use adaptive fuzzy system with dynamic rule adjustments
                     result = adaptiveFuzzyDecision(task, networkMetrics, nearestEdgeHostIndex,
                             edgeUtilization, edgeCapacity);
-                    SimLogger.printLine("Result Decision is "+result);
                 }
 //                case "CAPACITY_AWARE" -> {
 //                    // Focus on capacity-aware decision making to reduce VM capacity failures
@@ -384,11 +405,11 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
     }
 
     /**
-     * Main fuzzy Q-learning decision algorithm
+     * Main fuzzy Q-learning decision algorithm. Uses Exploitation method
      */
     private int fuzzyQLearningDecision(Task task, NetworkMetrics networkMetrics,
                                        int nearestEdgeHostIndex, double edgeUtilization, double edgeCapacity) {
-        // Extract key features for decision making
+
         double taskSize = task.getCloudletLength();
         double dataSize = task.getCloudletFileSize() + task.getCloudletOutputSize();
         double delaySensitivity = SimSettings.getInstance().getTaskLookUpTable()[task.getTaskType()][12];
@@ -410,39 +431,24 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
         fuzzyInputs.put("data_size", getFuzzyMemberships("data_size", dataSize));
         fuzzyInputs.put("edge_capacity", getFuzzyMemberships("edge_capacity", edgeCapacity));
         fuzzyInputs.put("edge_failure_rate", getFuzzyMemberships("edge_failure_rate", edgeFailureRate));
-        double rand = Math.random();
-        //SimLogger.printLine("Rand number is "+rand+" epsilon "+epsilon);
-        // Epsilon-greedy action selection
-        if (false) {
-            // Exploration: choose random action
 
-            //SimLogger.printLine("Rand number is "+rand);
-            if (rand < 0.33) {
-                return SimSettings.CLOUD_DATACENTER_ID;
-            } else if (rand < 0.66) {
-                return nearestEdgeHostIndex;
-            } else {
-                return task.getMobileDeviceId();
-            }
-        } else {
-            //return SimSettings.GENERIC_EDGE_DEVICE_ID;
-            // Exploitation: choose best action based on fuzzy Q-values
-            String[] relevantStates = {
-                    // State combination 1: Task size, edge utilization, edge capacity
-                    "task_size-" + getMaxFuzzyTerm(fuzzyInputs.get("task_size")) +
-                            "_edge_utilization-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_utilization")) +
-                            "_edge_capacity-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_capacity")),
+        // Exploitation: choose best action based on fuzzy Q-values
+        String[] relevantStates = {
+                // State combination 1: Task size, edge utilization, edge capacity
+                "task_size-" + getMaxFuzzyTerm(fuzzyInputs.get("task_size")) +
+                        "_edge_utilization-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_utilization")) +
+                        "_edge_capacity-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_capacity")),
 
-                    // State combination 2: Task size, wan bandwidth, delay sensitivity
-                    "task_size-" + getMaxFuzzyTerm(fuzzyInputs.get("task_size")) +
-                            "_wan_bandwidth-" + getMaxFuzzyTerm(fuzzyInputs.get("wan_bandwidth")) +
-                            "_delay_sensitivity-" + getMaxFuzzyTerm(fuzzyInputs.get("delay_sensitivity")),
+                // State combination 2: Task size, wan bandwidth, delay sensitivity
+                "task_size-" + getMaxFuzzyTerm(fuzzyInputs.get("task_size")) +
+                        "_wan_bandwidth-" + getMaxFuzzyTerm(fuzzyInputs.get("wan_bandwidth")) +
+                        "_delay_sensitivity-" + getMaxFuzzyTerm(fuzzyInputs.get("delay_sensitivity")),
 
-                    // State combination 3: Edge utilization, edge failure rate, data size
-                    "edge_utilization-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_utilization")) +
-                            "_edge_failure_rate-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_failure_rate")) +
-                            "_data_size-" + getMaxFuzzyTerm(fuzzyInputs.get("data_size"))
-            };
+                // State combination 3: Edge utilization, edge failure rate, data size
+                "edge_utilization-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_utilization")) +
+                        "_edge_failure_rate-" + getMaxFuzzyTerm(fuzzyInputs.get("edge_failure_rate")) +
+                        "_data_size-" + getMaxFuzzyTerm(fuzzyInputs.get("data_size"))
+        };
 
 
 //            // Calculate weighted Q-values based on fuzzy rules
@@ -490,7 +496,7 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
             } else {
                 return SimSettings.CLOUD_DATACENTER_ID;
             }
-        }
+
     }
 
     /**
@@ -526,7 +532,6 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
                 }
             }
         }
-        SimLogger.printLine("Initial Decision is "+initialDecision);
         return initialDecision;
     }
 
@@ -761,7 +766,7 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
         double requiredCapacity = ((CpuUtilizationModel_Custom)task.getUtilizationModelCpu()).predictUtilization(SimSettings.VM_TYPES.EDGE_VM);
 
         // Add safety margin to avoid being too close to capacity limit
-        double requiredWithMargin = requiredCapacity * 1.2; // 20% safety margin
+        double requiredWithMargin = requiredCapacity * 1.1; // 20% safety margin
 
         for (EdgeVM vm : vmArray) {
             double availableCapacity = 100.0 - vm.getCloudletScheduler().getTotalUtilizationOfCpu(CloudSim.clock());
@@ -1326,7 +1331,7 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
             // Edge execution - reward depends on utilization
             if (metadata.edgeUtilization < 50) {
                 resourceReward = 2.0; // Good use of underutilized edge
-            } else if (metadata.edgeUtilization < 80) {
+            } else if (metadata.edgeUtilization < 70) {
                 resourceReward = 1.0; // Moderate use of edge
             } else {
                 resourceReward = 0.0; // No reward for using highly utilized edge
