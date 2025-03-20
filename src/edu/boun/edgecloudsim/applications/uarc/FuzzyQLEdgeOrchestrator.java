@@ -1,6 +1,5 @@
 package edu.boun.edgecloudsim.applications.uarc;
 
-import edu.boun.edgecloudsim.applications.sample_app4.FCL_definition;
 import edu.boun.edgecloudsim.cloud_server.CloudVM;
 import edu.boun.edgecloudsim.core.SimManager;
 import edu.boun.edgecloudsim.core.SimSettings;
@@ -12,20 +11,19 @@ import edu.boun.edgecloudsim.edge_server.EdgeHost;
 import edu.boun.edgecloudsim.edge_server.EdgeVM;
 import edu.boun.edgecloudsim.utils.Location;
 import edu.boun.edgecloudsim.utils.SimLogger;
-import net.sourceforge.jFuzzyLogic.FIS;
-import org.antlr.runtime.RecognitionException;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEvent;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static edu.boun.edgecloudsim.applications.uarc.AdaptiveMLEdgeOrchestrator.TASK_COMPLETED;
 import static edu.boun.edgecloudsim.applications.uarc.AdaptiveMLEdgeOrchestrator.TASK_FAILED;
-import static org.cloudbus.cloudsim.core.CloudSim.getEntityId;
 
 /**
  * Enhanced Edge Orchestrator using Fuzzy Q-Learning for adaptive decision making
@@ -75,6 +73,11 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
     private Map<Integer, Double> capacityTrend = new HashMap<>();
     private double[] edgeFailureHistory = new double[10]; // Last 10 intervals
     private int historyIndex = 0;
+    private MultiLayerNetwork network = null;
+    private final int EPOCH_SIZE = 75000;
+    private double numberOfWlanOffloadedTask = 0;
+    private double numberOfManOffloadedTask = 0;
+    private double numberOfWanOffloadedTask = 0;
     /**
      * Constructor
      */
@@ -266,23 +269,6 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
         return key.toString();
     }
 
-//    /**
-//     * Schedule periodic events
-//     */
-//    private void scheduleEvents() {
-//        // Schedule metric updates
-//        CloudSim.send(getEntityId(SimSettings.GENERIC_EDGE_DEVICE_ID), getEntityId(), METRIC_UPDATE_INTERVAL,
-//                SimSettings.PERIODIC_METRIC_UPDATE, null);
-//
-//        // Schedule learning updates
-//        CloudSim.send(getEntityId(), getEntityId(), LEARNING_INTERVAL,
-//                SimSettings.LEARNING_UPDATE, null);
-//
-//        // Schedule policy updates
-//        CloudSim.send(getEntityId(), getEntityId(), POLICY_UPDATE_INTERVAL,
-//                SimSettings.POLICY_UPDATE, null);
-//    }
-
     /**
      * Main method to decide where to offload a task
      */
@@ -348,16 +334,20 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
                     result = adaptiveFuzzyDecision(task, networkMetrics, nearestEdgeHostIndex,
                             edgeUtilization, edgeCapacity);
                 }
-//                case "CAPACITY_AWARE" -> {
-//                    // Focus on capacity-aware decision making to reduce VM capacity failures
-//                    result = capacityAwareDecision(task, networkMetrics, nearestEdgeHostIndex,
-//                            edgeUtilization, edgeCapacity);
-//                }
-//                case "HYBRID_FUZZY_RL" -> {
-//                    // Hybrid approach combining fuzzy logic with traditional Q-learning
-//                    result = hybridFuzzyRLDecision(task, networkMetrics, nearestEdgeHostIndex,
-//                            edgeUtilization, edgeCapacity);
-//                }
+                case "DDEP" ->{
+                    RLState rlState = getTaskFeatures(task);
+                    INDArray output = network.output(rlState.getState());
+                    result = output.argMax().getInt();
+                    if (result == 14){
+                        numberOfWanOffloadedTask++;
+                    }
+                    else if(task.getSubmittedLocation().getServingWlanId() == result){
+                        numberOfWlanOffloadedTask++;
+                    }
+                    else{
+                        numberOfManOffloadedTask++;
+                    }
+                }
                 default -> {
                     SimLogger.printLine("Unknown edge orchestrator policy! Using default Fuzzy Q-Learning policy.");
                     result = SimSettings.GENERIC_EDGE_DEVICE_ID;
@@ -372,6 +362,78 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
         return result;
     }
 
+    private RLState getTaskFeatures(Task task) {
+        Task dummyTask = new Task(0, 0, 0, 0, 128, 128, new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
+        UarcNetworkModel networkModel = (UarcNetworkModel) SimManager.getInstance().getNetworkModel();
+        RLState currentState = new RLState();
+        ArrayList<Double> edgeCapacities = new ArrayList<>();
+
+        int numberOfHost = SimSettings.getInstance().getNumOfEdgeHosts();
+
+        double wanDelay = networkModel.getUploadDelay(task.getMobileDeviceId(),
+                SimSettings.CLOUD_DATACENTER_ID, dummyTask /* 1 Mbit */);
+
+        double wanBW = (wanDelay == 0) ? 0 : (1 / wanDelay); /* Mbps */
+
+        currentState.setWanBw(wanBW/20.21873);
+
+
+        double manDelayF = networkModel.getUploadDelayForTraining(SimSettings.GENERIC_EDGE_DEVICE_ID,
+                SimSettings.GENERIC_EDGE_DEVICE_ID, dummyTask );
+
+        double manBW = (manDelayF == 0) ? 0 : (1 / manDelayF);
+
+
+        double manDelay = getManDelayForAgent();
+        currentState.setManDelay(manDelay);
+
+        double taskRequiredCapacity = ((CpuUtilizationModel_Custom)task.getUtilizationModelCpu()).predictUtilization(SimSettings.VM_TYPES.EDGE_VM);
+        currentState.setTaskReqCapacity(taskRequiredCapacity/800);
+
+        int wlanID = task.getSubmittedLocation().getServingWlanId();
+        currentState.setWlanID((double)wlanID / (numberOfHost - 1));
+
+        int nearestEdgeHostId = 0;
+
+
+        for(int hostIndex=0; hostIndex<numberOfHost; hostIndex++){
+            List<EdgeVM> vmArray = SimManager.getInstance().getEdgeServerManager().getVmList(hostIndex);
+            EdgeHost host = (EdgeHost)(vmArray.get(0).getHost()); //all VMs have the same host
+
+            double totalUtilizationForEdgeServer=0;
+            for(int vmIndex=0; vmIndex<vmArray.size(); vmIndex++){
+                totalUtilizationForEdgeServer += vmArray.get(vmIndex).getCloudletScheduler().getTotalUtilizationOfCpu(CloudSim.clock());
+            }
+
+            double totalCapacity = 100 * vmArray.size();
+            double averageCapacity = (totalCapacity - totalUtilizationForEdgeServer)  / vmArray.size();
+            double normalizedCapacity = averageCapacity / 100;
+
+            if (normalizedCapacity < 0){
+                normalizedCapacity = 0;
+            }
+            edgeCapacities.add(normalizedCapacity);
+
+            if (host.getLocation().getServingWlanId() == task.getSubmittedLocation().getServingWlanId()){
+                nearestEdgeHostId = hostIndex;
+            }
+
+        }
+
+        currentState.setAvailVmInEdge(edgeCapacities);
+        currentState.setNearestEdgeHostId((double)nearestEdgeHostId / numberOfHost);
+
+        double delay_sensitivity = SimSettings.getInstance().getTaskLookUpTable()[task.getTaskType()][12];
+
+        currentState.setDelaySensitivity(delay_sensitivity);
+
+        currentState.setNumberOfWlanOffloadedTask(numberOfWlanOffloadedTask/ EPOCH_SIZE);
+        currentState.setNumberOfManOffloadedTask(numberOfManOffloadedTask/ EPOCH_SIZE);
+        currentState.setNumberOfWanOffloadedTask(numberOfWanOffloadedTask/ EPOCH_SIZE);
+        currentState.setActiveManTaskCount(activeManTaskCount/25);
+        currentState.setActiveWanTaskCount(activeWanTaskCount/25);
+        return  currentState;
+    }
 
 
     /**
@@ -1595,4 +1657,27 @@ public class FuzzyQLEdgeOrchestrator extends EdgeOrchestrator {
             }
         }
     }
+    public double getManDelayForAgent(){
+        double delay = 0;
+        double mu = 0;
+        double lambda = 0;
+        double bandwidth = 1300*1024; //Kbps , C
+
+        if (totalSizeOfActiveManTasks == 0){
+            mu = bandwidth;
+        }else{
+            mu = bandwidth / (totalSizeOfActiveManTasks * 8);
+        }
+
+        lambda = activeManTaskCount;
+
+
+        if (lambda >= mu){
+            return 0;
+        }else{
+            delay = 1 / (mu - lambda);
+            return delay;
+        }
+    }
+
 }

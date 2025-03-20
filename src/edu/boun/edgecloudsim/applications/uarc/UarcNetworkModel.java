@@ -392,7 +392,37 @@ public class UarcNetworkModel extends NetworkModel {
 
         return result;
     }
+    public double getUploadDelayForTraining(int sourceDeviceId, int destDeviceId, Task task) {
+        double delay = 0;
 
+        //special case for man communication
+        if(sourceDeviceId == destDeviceId && sourceDeviceId == SimSettings.GENERIC_EDGE_DEVICE_ID){
+            return delay = getManUploadDelayForTraining();
+        }
+
+        Location accessPointLocation = SimManager.getInstance().getMobilityModel().getLocation(sourceDeviceId,CloudSim.clock());
+
+        //mobile device to cloud server
+        if(destDeviceId == SimSettings.CLOUD_DATACENTER_ID){
+            delay = getWanUploadDelay(accessPointLocation, task.getCloudletFileSize());
+        }
+        //mobile device to edge device (wifi access point)
+        else if (destDeviceId == SimSettings.GENERIC_EDGE_DEVICE_ID) {
+            delay = getWlanUploadDelay(accessPointLocation, task.getCloudletFileSize());
+        }
+
+        return delay;
+    }
+
+    private double getManUploadDelayForTraining() {
+        double result = calculateMM1(SimSettings.getInstance().getInternalLanDelay(),
+                MAN_BW,
+                ManPoissonMeanForUpload,
+                avgManTaskInputSize,
+                numberOfMobileDevices);
+
+        return result;
+    }
     public void updateMM1QueeuModel(){
         double lastInterval = CloudSim.clock() - lastMM1QueeuUpdateTime;
         lastMM1QueeuUpdateTime = CloudSim.clock();

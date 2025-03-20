@@ -13,6 +13,7 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -206,10 +207,10 @@ public class UarcDDQN {
         return memoryItems;
     }
 
-    public void saveModel(String episodeNo, Double reward, Double avgQValue)  {
+    public void saveModel(String episodeNo, Double reward, Double avgQValue) throws IOException {
         String modelName = "D-DqnModel-";
         modelName = modelName + episodeNo + "-"+ reward + "-" + avgQValue;
-        //this.qNetwork.save(new File(modelName), false);
+        this.network.save(new File(modelName), false);
     }
 
     public static UarcDDQN getInstance(){

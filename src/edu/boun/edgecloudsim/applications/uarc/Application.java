@@ -8,6 +8,7 @@ import edu.boun.edgecloudsim.utils.SimUtils;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.CloudSim;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -17,10 +18,10 @@ import java.util.Date;
  *
  */
 public class Application {
-
+    private static final int NUM_OF_EPISODES = 100;
     public static void main(String[] args){
         Log.disable();
-
+        boolean isTraining = true;
         SimLogger.enablePrintLog();
         int iterationNumber = 1;
         String configFile = "";
@@ -58,57 +59,73 @@ public class Application {
         String now = df.format(SimulationStartDate);
         SimLogger.printLine("Simulation started at " + now);
         SimLogger.printLine("----------------------------------------------------------------------");
-        for(int j=SS.getMinNumOfMobileDev(); j<=SS.getMaxNumOfMobileDev(); j+=SS.getMobileDevCounterSize())
-        {
-            for(int k=0; k<SS.getSimulationScenarios().length; k++)
-            {
-                for(int i=0; i<SS.getOrchestratorPolicies().length; i++)
-                {
-                    String simScenario = SS.getSimulationScenarios()[k];
-                    String orchestratorPolicy = SS.getOrchestratorPolicies()[i];
-                    Date ScenarioStartDate = Calendar.getInstance().getTime();
-                    now = df.format(ScenarioStartDate);
 
-                    SimLogger.printLine("Scenario started at " + now);
-                    SimLogger.printLine("Scenario: " + simScenario + " - Policy: " + orchestratorPolicy + " - #iteration: " + iterationNumber);
-                    SimLogger.printLine("Duration: " + SS.getSimulationTime()/60 + " min (warm up period: "+ SS.getWarmUpPeriod()/60 +" min) - #devices: " + j);
-                    SimLogger.getInstance().simStarted(outputFolder,"SIMRESULT_" + simScenario + "_"  + orchestratorPolicy + "_" + j + "DEVICES");
+        UarcDDQN uarcDDQN = null;
+        if(isTraining){
+            uarcDDQN = new UarcDDQN(SS.getNumOfEdgeHosts());
+        }
+        int num_episodes = 1;
+        if(isTraining){
+            num_episodes = NUM_OF_EPISODES;
+        }
+        for(int w =0; w < num_episodes;w++) {
+            for (int j = SS.getMinNumOfMobileDev(); j <= SS.getMaxNumOfMobileDev(); j += SS.getMobileDevCounterSize()) {
+                for (int k = 0; k < SS.getSimulationScenarios().length; k++) {
+                    for (int i = 0; i < SS.getOrchestratorPolicies().length; i++) {
+                        String simScenario = SS.getSimulationScenarios()[k];
+                        String orchestratorPolicy = SS.getOrchestratorPolicies()[i];
+                        Date ScenarioStartDate = Calendar.getInstance().getTime();
+                        now = df.format(ScenarioStartDate);
 
-                    try
-                    {
-                        // First step: Initialize the CloudSim package. It should be called
-                        // before creating any entities.
-                        int num_user = 2;   // number of grid users
-                        Calendar calendar = Calendar.getInstance();
-                        boolean trace_flag = false;  // mean trace events
+                        SimLogger.printLine("Scenario started at " + now);
+                        SimLogger.printLine("Scenario: " + simScenario + " - Policy: " + orchestratorPolicy + " - #iteration: " + iterationNumber);
+                        SimLogger.printLine("Duration: " + SS.getSimulationTime() / 60 + " min (warm up period: " + SS.getWarmUpPeriod() / 60 + " min) - #devices: " + j);
+                        SimLogger.getInstance().simStarted(outputFolder, "SIMRESULT_" + simScenario + "_" + orchestratorPolicy + "_" + j + "DEVICES");
 
-                        // Initialize the CloudSim library
-                        CloudSim.init(num_user, calendar, trace_flag, 0.01);
+                        try {
+                            // First step: Initialize the CloudSim package. It should be called
+                            // before creating any entities.
+                            int num_user = 2;   // number of grid users
+                            Calendar calendar = Calendar.getInstance();
+                            boolean trace_flag = false;  // mean trace events
 
-                        // Generate EdgeCloudsim Scenario Factory
-                        ScenarioFactory sampleFactory = new UarcScenarioFactory(j,SS.getSimulationTime(), orchestratorPolicy, simScenario);
+                            // Initialize the CloudSim library
+                            CloudSim.init(num_user, calendar, trace_flag, 0.01);
 
-                        // Generate EdgeCloudSim Simulation Manager
-                        SimManager manager = new SimManager(sampleFactory, j, simScenario, orchestratorPolicy);
+                            // Generate EdgeCloudsim Scenario Factory
+                            ScenarioFactory sampleFactory = new UarcScenarioFactory(j, SS.getSimulationTime(), orchestratorPolicy, simScenario);
 
-                        // Start simulation
-                        manager.startSimulation();
-                    }
-                    catch (Exception e)
-                    {
-                        SimLogger.printLine("The simulation has been terminated due to an unexpected error");
-                        e.printStackTrace();
-                        System.exit(0);
-                    }
+                            // Generate EdgeCloudSim Simulation Manager
+                            SimManager manager = new SimManager(sampleFactory, j, simScenario, orchestratorPolicy);
 
-                    Date ScenarioEndDate = Calendar.getInstance().getTime();
-                    now = df.format(ScenarioEndDate);
-                    SimLogger.printLine("Scenario finished at " + now +  ". It took " + SimUtils.getTimeDifference(ScenarioStartDate,ScenarioEndDate));
-                    SimLogger.printLine("----------------------------------------------------------------------");
-                }//End of orchestrators loop
-            }//End of scenarios loop
-        }//End of mobile devices loop
+                            // Start simulation
+                            manager.startSimulation();
+                        } catch (Exception e) {
+                            SimLogger.printLine("The simulation has been terminated due to an unexpected error");
+                            e.printStackTrace();
+                            System.exit(0);
+                        }
 
+                        Date ScenarioEndDate = Calendar.getInstance().getTime();
+                        now = df.format(ScenarioEndDate);
+                        SimLogger.printLine("Scenario finished at " + now + ". It took " + SimUtils.getTimeDifference(ScenarioStartDate, ScenarioEndDate));
+                        SimLogger.printLine("----------------------------------------------------------------------");
+                    }//End of orchestrators loop
+                }//End of scenarios loop
+            }//End of mobile devices loop
+            if(isTraining){
+                try{
+                    //ddqnAgent.saveModel(Integer.toString(episode), ddqnAgent.getReward());
+                    uarcDDQN.saveModel(Integer.toString(w),uarcDDQN.getReward(), uarcDDQN.getAvgQvalue());
+                    uarcDDQN.resetQValue();
+                }catch (IOException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("\n Total reward of agent for this episode: "+ uarcDDQN.getReward());
+                System.out.println("\n Average Q-value of agent for this episode: "+ uarcDDQN.getAvgQvalue()); //2022 new
+
+            }
+        }
         Date SimulationEndDate = Calendar.getInstance().getTime();
         now = df.format(SimulationEndDate);
         SimLogger.printLine("Simulation finished at " + now +  ". It took " + SimUtils.getTimeDifference(SimulationStartDate,SimulationEndDate));
