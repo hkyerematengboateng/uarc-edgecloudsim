@@ -1,0 +1,64 @@
+def get_configuration(arg_type):
+    """
+    Returns a value according to the given arguments
+
+    Args:
+        arg_type (int): Type of configuration parameter to return
+13-03-2025_21-47
+    Returns:
+        Various: Configuration value based on arg_type
+    """
+    if arg_type == 1:
+        ret_val = '../output/13-03-2025_21-47/default_config'   #'D:\\sim_results'
+    elif arg_type == 2:
+        ret_val = 60 * 20  # simulation time (in seconds)
+    elif arg_type == 3:
+        ret_val = 50  # Number of iterations
+    elif arg_type == 4:
+        ret_val = 1  # x tick interval for number of mobile devices
+    elif arg_type == 5:
+        ret_val = ['FUZZY_Q_LEARNING', 'UTILIZATION_BASED', 'NETWORK_BASED', 'ADAPTIVE_FUZZY', 'HYBRID']
+    elif arg_type == 6:
+        ret_val = ['fuzzy', 'util.', 'bw', 'Flores*', 'hybrid']
+    elif arg_type == 7:
+        ret_val = [10, 3, 9, 8]  # position of figure
+    elif arg_type == 8:
+        ret_val = 0  # for future usage
+    elif arg_type == 9:
+        ret_val = 'Number of Mobile Devices'  # Common text for x axis
+    elif arg_type == 10:
+        ret_val = 200  # min number of mobile device
+    elif arg_type == 11:
+        ret_val = 200  # step size of mobile device count
+    elif arg_type == 12:
+        ret_val = 2400  # max number of mobile device
+    elif arg_type == 17:
+        ret_val = 2  # xTickLabelCoefficient
+    elif arg_type == 18:
+        ret_val = 0  # return 1 if you want to save figure as pdf
+    elif arg_type == 19:
+        ret_val = 0  # return 1 if you want to plot errors
+    elif arg_type == 20:
+        ret_val = 0  # return 1 if graph is plotted colorful
+    elif arg_type == 21:
+        ret_val = [0.55, 0, 0]  # color of first line
+    elif arg_type == 22:
+        ret_val = [0, 0.15, 0.6]  # color of second line
+    elif arg_type == 23:
+        ret_val = [0, 0.23, 0]  # color of third line
+    elif arg_type == 24:
+        ret_val = [0.6, 0, 0.6]  # color of fourth line
+    elif arg_type == 25:
+        ret_val = [0.08, 0.08, 0.08]  # color of fifth line
+    elif arg_type == 26:
+        ret_val = [0, 0.8, 0.8]  # color of sixth line
+    elif arg_type == 27:
+        ret_val = [0.8, 0.4, 0]  # color of seventh line
+    elif arg_type == 28:
+        ret_val = [0.8, 0.8, 0]  # color of eighth line
+    elif arg_type == 40:
+        ret_val = ['-k*', '-ko', '-ks', '-kv', '-kp', '-kd', '-kx', '-kh']  # line style (marker) of the colorless line
+    elif arg_type == 50:
+        ret_val = [':k*', ':ko', ':ks', ':kv', ':kp', ':kd', ':kx', ':kh']  # line style (marker) of the colorful line
+
+    return ret_val

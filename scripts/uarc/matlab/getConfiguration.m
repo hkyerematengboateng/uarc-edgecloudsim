@@ -4,15 +4,15 @@
 %--------------------------------------------------------------
 function [ret_val] = getConfiguration(argType)
     if(argType == 1)
-        ret_val = 'D:\sim_results';
+        ret_val = 'sim_results/fuzzy-adaptive';
     elseif(argType == 2)
         ret_val = 60 * 20; %simulation time (in seconds)
     elseif(argType == 3)
-        ret_val = 50; %Number of iterations
+        ret_val = 10; %Number of iterations
     elseif(argType == 4)
         ret_val = 1; %x tick interval for number of mobile devices
     elseif(argType == 5)
-        ret_val = {'FUZZY_BASED','UTILIZATION_BASED','NETWORK_BASED','FUZZY_COMPETITOR','HYBRID'};
+        ret_val = {'ADAPTIVE_FUZZY','FUZZY_Q_LEARNING'};
     elseif(argType == 6)
         ret_val = {'fuzzy','util.','bw','Flores*','hybrid'};
     elseif(argType == 7)
